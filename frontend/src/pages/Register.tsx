@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { saveToken } from "../lib/auth";
+import { getGuestCart, clearGuestCart } from "../lib/guestCart";
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -22,6 +23,16 @@ function Register() {
         body: JSON.stringify({ email, password }),
       });
       saveToken(token);
+
+      const guestCart = getGuestCart();
+      if (guestCart.length > 0) {
+        await apiFetch("/cart/merge", {
+          method: "POST",
+          body: JSON.stringify(guestCart),
+        });
+        clearGuestCart();
+      }
+
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al registrarse");

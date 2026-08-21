@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch } from "../lib/api";
+import { addToCart } from "../lib/cart";
 
 interface Product {
   id: string;
@@ -9,6 +11,7 @@ interface Product {
   brand: string;
   category: string;
   imageUrl: string;
+  stock: number;
 }
 
 interface Filters {
@@ -32,6 +35,7 @@ function Catalog() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [cartMessages, setCartMessages] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -49,6 +53,29 @@ function Catalog() {
 
   function updateFilter(key: keyof Filters, value: string) {
     setFilters((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleAddToCart(e: MouseEvent, product: Product) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      await addToCart(product.id, 1);
+      setCartMessages((prev) => ({ ...prev, [product.id]: "Agregado ✅" }));
+    } catch (err) {
+      setCartMessages((prev) => ({
+        ...prev,
+        [product.id]: err instanceof Error ? err.message : "Error al agregar",
+      }));
+    } finally {
+      setTimeout(() => {
+        setCartMessages((prev) => {
+          const next = { ...prev };
+          delete next[product.id];
+          return next;
+        });
+      }, 2000);
+    }
   }
 
   return (
@@ -101,21 +128,39 @@ function Catalog() {
       {!loading && products.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {products.map((product) => (
-            <Link
+            <div
               key={product.id}
-              to={`/product/${product.id}`}
               className="bg-white rounded-lg shadow p-3 flex flex-col hover:shadow-md transition-shadow"
             >
-              <img
-                src={product.imageUrl}
-                alt={product.name}
-                className="w-full aspect-square object-cover rounded mb-2"
-              />
-              <span className="text-text-primary font-medium">{product.name}</span>
-              <span className="text-accent-blue font-semibold">
-                {formatPrice(product.price)}
-              </span>
-            </Link>
+              <Link to={`/product/${product.id}`}>
+                <img
+                  src={product.imageUrl}
+                  alt={product.name}
+                  className="w-full aspect-square object-cover rounded mb-2"
+                />
+                <span className="text-text-primary font-medium block">{product.name}</span>
+                <span className="text-accent-blue font-semibold block mb-2">
+                  {formatPrice(product.price)}
+                </span>
+              </Link>
+
+              {product.stock > 0 ? (
+                <button
+                  onClick={(e) => handleAddToCart(e, product)}
+                  className="bg-cta-green text-white rounded px-3 py-2 text-sm font-medium"
+                >
+                  Añadir al carrito
+                </button>
+              ) : (
+                <span className="text-red-600 text-sm">Sin stock</span>
+              )}
+
+              {cartMessages[product.id] && (
+                <span className="text-xs text-text-primary mt-1">
+                  {cartMessages[product.id]}
+                </span>
+              )}
+            </div>
           ))}
         </div>
       )}

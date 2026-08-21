@@ -67,3 +67,5 @@ Esto levanta el backend en `http://localhost:4000` y el frontend en `http://loca
 
 - Se fijó `tailwindcss` en versión 3.x (en vez de la 4.x que instala `npm create vite` por defecto) porque el prompt del Sprint 0 pide explícitamente el patrón clásico `tailwind.config.js` + `postcss.config.js` + `autoprefixer`, propio de Tailwind v3.
 - Los filtros del catálogo (categoría, marca) son inputs de texto libre en vez de selects poblados dinámicamente, para no depender de un endpoint adicional de "categorías/marcas disponibles" no pedido en el Sprint 1.
+- El badge del carrito se actualiza entre componentes con un `CustomEvent` nativo (`cart:updated`) en `window`, en vez de introducir Context/Redux no pedidos, para mantener `lib/cart.ts` como única fuente de verdad sin estado global.
+- La validación de stock 0 al agregar al carrito es autoritativa en el backend (401/400 vía API) para usuarios logueados; para invitados (100% `localStorage`, sin llamada al backend) se previene en la UI ocultando el botón "Añadir al carrito" cuando `stock <= 0`, ya que no hay endpoint que consultar en ese flujo.
