@@ -40,7 +40,16 @@ npx prisma migrate dev --name init
 
 Esto crea las 6 tablas del esquema (`User`, `Product`, `CartItem`, `Order`, `OrderItem`, `Payment`) en la base de Neon.
 
-## 5. Levantar el proyecto
+## 5. Cargar datos de prueba (seed)
+
+```bash
+cd backend
+npx prisma db seed
+```
+
+Esto inserta ~20 productos tecnológicos de prueba para el catálogo.
+
+## 6. Levantar el proyecto
 
 Desde la raíz:
 
@@ -51,8 +60,10 @@ npm run dev
 Esto levanta el backend en `http://localhost:4000` y el frontend en `http://localhost:5173` al mismo tiempo.
 
 - Backend health check: `GET http://localhost:4000/api/health`
-- Frontend: abre `http://localhost:5173` — debe mostrar "Backend conectado ✅"
+- Frontend: abre `http://localhost:5173` — debe mostrar el catálogo de productos, con filtros por categoría, marca y rango de precio
+- Registro/login disponibles en `/register` y `/login`
 
 ## Notas de decisiones no especificadas
 
 - Se fijó `tailwindcss` en versión 3.x (en vez de la 4.x que instala `npm create vite` por defecto) porque el prompt del Sprint 0 pide explícitamente el patrón clásico `tailwind.config.js` + `postcss.config.js` + `autoprefixer`, propio de Tailwind v3.
+- Los filtros del catálogo (categoría, marca) son inputs de texto libre en vez de selects poblados dinámicamente, para no depender de un endpoint adicional de "categorías/marcas disponibles" no pedido en el Sprint 1.

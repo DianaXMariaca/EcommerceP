@@ -1,30 +1,19 @@
-import { useEffect, useState } from "react";
-import { apiFetch } from "./lib/api";
-
-type BackendStatus = "loading" | "connected" | "error";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Catalog from "./pages/Catalog";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ProductDetail from "./pages/ProductDetail";
 
 function App() {
-  const [status, setStatus] = useState<BackendStatus>("loading");
-
-  useEffect(() => {
-    apiFetch("/health")
-      .then(() => setStatus("connected"))
-      .catch(() => setStatus("error"));
-  }, []);
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-neutral">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold text-text-primary mb-2">
-          Ecommerce MVP
-        </h1>
-        <p className="text-text-primary">
-          {status === "loading" && "Conectando con el backend..."}
-          {status === "connected" && "Backend conectado ✅"}
-          {status === "error" && "Backend no disponible ❌"}
-        </p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Catalog />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
