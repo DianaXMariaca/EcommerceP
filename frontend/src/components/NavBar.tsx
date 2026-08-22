@@ -32,9 +32,14 @@ function NavBar() {
 
       <div className="flex items-center gap-4">
         {loggedIn ? (
-          <button onClick={handleLogout} className="text-sm text-accent-blue">
-            Cerrar sesión
-          </button>
+          <>
+            <Link to="/orders" className="text-sm text-accent-blue">
+              Mis pedidos
+            </Link>
+            <button onClick={handleLogout} className="text-sm text-accent-blue">
+              Cerrar sesión
+            </button>
+          </>
         ) : (
           <>
             <Link to="/login" className="text-sm text-accent-blue">

@@ -24,7 +24,7 @@ export interface CartLine {
 
 const CART_UPDATED_EVENT = "cart:updated";
 
-function notifyCartUpdated() {
+export function notifyCartUpdated() {
   window.dispatchEvent(new Event(CART_UPDATED_EVENT));
 }
 

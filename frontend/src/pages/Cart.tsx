@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { getCart, removeFromCart, updateCartQuantity } from "../lib/cart";
+import { Link, useNavigate } from "react-router-dom";
+import { getCart, notifyCartUpdated, removeFromCart, updateCartQuantity } from "../lib/cart";
 import type { CartLine } from "../lib/cart";
+import { apiFetch } from "../lib/api";
 
 function formatPrice(price: string) {
   return new Intl.NumberFormat("es-CO", {
@@ -14,6 +15,9 @@ function formatPrice(price: string) {
 function Cart() {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const navigate = useNavigate();
 
   function loadCart() {
     setLoading(true);
@@ -34,6 +38,20 @@ function Cart() {
   async function handleRemove(line: CartLine) {
     await removeFromCart(line);
     loadCart();
+  }
+
+  async function handleCheckout() {
+    setCheckoutError(null);
+    setCheckingOut(true);
+
+    try {
+      const order = await apiFetch("/orders/checkout", { method: "POST" });
+      notifyCartUpdated();
+      navigate(`/order/${order.id}`);
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : "No se pudo completar el pago");
+      setCheckingOut(false);
+    }
   }
 
   const total = lines.reduce((sum, line) => sum + Number(line.product.price) * line.quantity, 0);
@@ -111,15 +129,18 @@ function Cart() {
         ))}
       </div>
 
+      {checkoutError && <p className="text-red-600 text-sm mt-4">{checkoutError}</p>}
+
       <div className="mt-6 flex items-center justify-between bg-white rounded-lg shadow p-4">
         <span className="text-lg font-semibold text-text-primary">
           Total: {formatPrice(String(total))}
         </span>
         <button
-          disabled
-          className="bg-cta-green text-white rounded px-4 py-2 font-medium opacity-60 cursor-not-allowed"
+          onClick={handleCheckout}
+          disabled={checkingOut}
+          className="bg-cta-green text-white rounded px-4 py-2 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Ir a pagar (Próximamente)
+          {checkingOut ? "Procesando..." : "Ir a pagar"}
         </button>
       </div>
     </div>
