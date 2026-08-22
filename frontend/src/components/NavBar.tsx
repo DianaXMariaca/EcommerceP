@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { clearToken, getToken } from "../lib/auth";
+import { clearToken, getCurrentUserRole, getToken } from "../lib/auth";
 import { getCartCount, onCartUpdated } from "../lib/cart";
 
 function NavBar() {
   const [cartCount, setCartCount] = useState(0);
   const [loggedIn, setLoggedIn] = useState(!!getToken());
+  const [role, setRole] = useState(getCurrentUserRole());
   const navigate = useNavigate();
 
   useEffect(() => {
     function refresh() {
       setLoggedIn(!!getToken());
+      setRole(getCurrentUserRole());
       getCartCount().then(setCartCount);
     }
 
@@ -36,6 +38,11 @@ function NavBar() {
             <Link to="/orders" className="text-sm text-accent-blue">
               Mis pedidos
             </Link>
+            {(role === "support" || role === "admin") && (
+              <Link to="/panel" className="text-sm text-accent-blue">
+                Panel
+              </Link>
+            )}
             <button onClick={handleLogout} className="text-sm text-accent-blue">
               Cerrar sesión
             </button>

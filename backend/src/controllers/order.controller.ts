@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
+import { OrderStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { processPayment } from "../lib/payment";
+
+const VALID_STATUSES: OrderStatus[] = ["pending", "paid", "shipped", "delivered"];
 
 function generateTrackingId(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -83,10 +86,15 @@ export async function checkout(req: Request, res: Response) {
 }
 
 export async function listOrders(req: Request, res: Response) {
+  const isElevated = req.user!.role === "support" || req.user!.role === "admin";
+
   const orders = await prisma.order.findMany({
-    where: { userId: req.user!.id },
+    where: isElevated ? {} : { userId: req.user!.id },
     orderBy: { createdAt: "desc" },
-    include: { items: { include: { product: true } } },
+    include: {
+      items: { include: { product: true } },
+      ...(isElevated ? { user: { select: { email: true } } } : {}),
+    },
   });
 
   res.json(orders);
@@ -105,4 +113,26 @@ export async function getOrderById(req: Request, res: Response) {
   }
 
   res.json(order);
+}
+
+export async function updateOrderStatus(req: Request, res: Response) {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (typeof status !== "string" || !VALID_STATUSES.includes(status as OrderStatus)) {
+    return res.status(400).json({ error: "Estado inválido" });
+  }
+
+  const existing = await prisma.order.findUnique({ where: { id } });
+  if (!existing) {
+    return res.status(404).json({ error: "Pedido no encontrado" });
+  }
+
+  const updated = await prisma.order.update({
+    where: { id },
+    data: { status: status as OrderStatus },
+    include: { items: { include: { product: true } }, user: { select: { email: true } } },
+  });
+
+  res.json(updated);
 }
