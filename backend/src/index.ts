@@ -12,7 +12,8 @@ import { adminRouter } from "./routes/admin.route";
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 
-app.use(cors({ origin: "http://localhost:5173" }));
+const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
+app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
 
 app.use("/api", healthRouter);

@@ -63,6 +63,10 @@ Esto levanta el backend en `http://localhost:4000` y el frontend en `http://loca
 - Frontend: abre `http://localhost:5173` — debe mostrar el catálogo de productos, con filtros por categoría, marca y rango de precio
 - Registro/login disponibles en `/register` y `/login`
 
+## Despliegue
+
+El backend vive en **Render** (Web Service, corre `npm run build` y luego `npm start`) y el frontend en **Vercel** (deploy estático de Vite). Ambos apuntan a la misma base de datos de **Neon** ya usada en desarrollo — no hay una base separada para producción. Las variables de entorno reales (`DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`, `VITE_API_URL`) se configuran directamente en los dashboards de Render y Vercel, nunca en este repositorio.
+
 ## Notas de decisiones no especificadas
 
 - Se fijó `tailwindcss` en versión 3.x (en vez de la 4.x que instala `npm create vite` por defecto) porque el prompt del Sprint 0 pide explícitamente el patrón clásico `tailwind.config.js` + `postcss.config.js` + `autoprefixer`, propio de Tailwind v3.
