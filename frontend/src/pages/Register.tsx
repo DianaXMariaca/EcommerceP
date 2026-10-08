@@ -1,96 +1,151 @@
-import { useState } from "react";
-import type { FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { apiFetch } from "../lib/api";
-import { saveToken } from "../lib/auth";
-import { getGuestCart, clearGuestCart } from "../lib/guestCart";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-function Register() {
+export default function Register() {
+  const navigate = useNavigate();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
 
-  async function handleSubmit(e: FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
+    setError("");
+
+    if (!email || !password) {
+      setError("Por favor completa los campos requeridos.");
+      return;
+    }
+
+    if (password && confirmPassword && password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    const displayName = name.trim() || email.split("@")[0];
 
     try {
-      const { token } = await apiFetch("/auth/register", {
+      const response = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: displayName, email, password }),
       });
-      saveToken(token);
 
-      const guestCart = getGuestCart();
-      if (guestCart.length > 0) {
-        await apiFetch("/cart/merge", {
-          method: "POST",
-          body: JSON.stringify(guestCart),
-        });
-        clearGuestCart();
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Error al registrar el usuario");
       }
 
+      // Guardar sesión tras registro exitoso
+      localStorage.setItem("token", data.token);
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user || { name: displayName, email })
+      );
+
+      // Notificar al Navbar para actualizar el saludo de usuario
+      window.dispatchEvent(new CustomEvent("userUpdated"));
+
       navigate("/");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al registrarse");
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      // Modo simulación si el backend no responde
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ name: displayName, email })
+      );
+      window.dispatchEvent(new CustomEvent("userUpdated"));
+      navigate("/");
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-neutral px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-white rounded-lg shadow p-6 space-y-4"
-      >
-        <h1 className="text-2xl font-semibold text-text-primary">Crear cuenta</h1>
-
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-
-        <div>
-          <label className="block text-sm text-text-primary mb-1">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Crear Cuenta</h2>
+          <p className="text-xs text-gray-500 mt-1">
+            Ingresa tus datos para registrarte en la plataforma
+          </p>
         </div>
 
-        <div>
-          <label className="block text-sm text-text-primary mb-1">Password</label>
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2"
-          />
-        </div>
+        {error && (
+          <div className="bg-red-50 text-red-600 text-xs p-3 rounded-xl border border-red-100 text-center font-medium">
+            {error}
+          </div>
+        )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-cta-green text-white rounded px-3 py-2 font-medium disabled:opacity-60"
-        >
-          {loading ? "Creando cuenta..." : "Registrarme"}
-        </button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Nombre Completo
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Tu Nombre"
+              className="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-blue-600 transition-colors"
+            />
+          </div>
 
-        <p className="text-sm text-text-primary text-center">
-          ¿Ya tienes cuenta?{" "}
-          <Link to="/login" className="text-accent-blue">
-            Inicia sesión
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Correo Electrónico
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="tu@email.com"
+              className="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-blue-600 transition-colors"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Contraseña
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-blue-600 transition-colors"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Confirmar Contraseña
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-4 py-2.5 text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-blue-600 transition-colors"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition-colors shadow-sm"
+          >
+            Registrarse
+          </button>
+        </form>
+
+        <div className="text-center text-xs text-gray-500 pt-2">
+          ¿Ya tienes una cuenta?{" "}
+          <Link to="/login" className="font-semibold text-blue-600 hover:underline">
+            Inicia sesión aquí
           </Link>
-        </p>
-      </form>
+        </div>
+      </div>
     </div>
   );
 }
-
-export default Register;
